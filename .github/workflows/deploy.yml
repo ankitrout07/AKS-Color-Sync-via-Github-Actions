@@ -1,0 +1,25 @@
+name: Color Sync Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # This allows you to run it manually for testing!
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t color-sync-app:latest .
+
+      - name: Deploy Container
+        run: |
+          # Stop and remove if exists
+          docker stop color-sync-container || true
+          docker rm color-sync-container || true
+          # Run the new version
+          docker run -d --name color-sync-container -p 8080:3000 color-sync-app:latest
