@@ -49,10 +49,8 @@ This project implements a **Push-to-Deploy** strategy:
 ## 📊 Project Roadmap (The 5-Project Series)
 
 - [x] **Project 1: Color-Sync** (Localized CI/CD & Docker)
-- [ ] **Project 2: Cloud Migration** (AWS EC2, S3, & ALB Integration)
-- [ ] **Project 3: Observability Stack** (Prometheus & Grafana Monitoring)
-- [ ] **Project 4: Orchestration** (Kubernetes/K3s Cluster Deployment)
-- [ ] **Project 5: DevSecOps** (Automated Security Scanning & IAM Hardening)
+- [ ] **Project 2: Observability Stack** (Prometheus & Grafana Monitoring)
+
 
 ---
 
