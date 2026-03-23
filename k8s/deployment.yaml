@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: acrcolorsyncankit2026.azurecr.io/color-sync:${{ github.sha }}
+        image: acrcolorsyncankit2026.azurecr.io/color-sync:latest
         ports:
         - containerPort: 8081
 ---
