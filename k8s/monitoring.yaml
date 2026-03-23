@@ -1,0 +1,24 @@
+- name: Deploy Monitoring Stack
+  run: |
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm upgrade --install monitoring-stack prometheus-community/kube-prometheus-stack \
+      --namespace monitoring --create-namespace \
+      --set grafana.service.type=LoadBalancer
+
+- name: Capture Infrastructure IPs
+  id: get_ips
+  run: |
+    # Get Color-Sync IP
+    COLOR_IP=$(kubectl get svc color-sync-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    # Get Grafana IP
+    GRAFANA_IP=$(kubectl get svc monitoring-stack-grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    
+    echo "COLOR_SYNC_URL=http://$COLOR_IP" >> $GITHUB_OUTPUT
+    echo "GRAFANA_URL=http://$GRAFANA_IP" >> $GITHUB_OUTPUT
+
+- name: Print Access Links
+  run: |
+    echo "Deployment Successful!"
+    echo "App URL: ${{ steps.get_ips.outputs.COLOR_SYNC_URL }}"
+    echo "Grafana URL: ${{ steps.get_ips.outputs.GRAFANA_URL }}"
