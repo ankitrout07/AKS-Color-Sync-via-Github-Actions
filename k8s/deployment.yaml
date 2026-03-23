@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: color-sync
+  labels:
+    app: color-sync
 spec:
   replicas: 2
   selector:
@@ -13,19 +15,14 @@ spec:
         app: color-sync
     spec:
       containers:
-      - name: web
+      - name: color-sync
         image: acrcolorsyncankit2026.azurecr.io/color-sync:latest
         ports:
-        - containerPort: 8081
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: color-sync-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8081
-  selector:
-    app: color-sync
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
