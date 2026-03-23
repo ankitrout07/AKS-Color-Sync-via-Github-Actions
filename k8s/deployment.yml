@@ -17,7 +17,7 @@ spec:
       containers:
       - name: color-sync-web
         # This tag will be updated by your GitHub Action
-        image: acrcolorsync.azurecr.io/color-sync:latest
+        image: acrcolorsyncankit2026.azurecr.io/color-sync:latest
         ports:
         - containerPort: 8080
         resources:
