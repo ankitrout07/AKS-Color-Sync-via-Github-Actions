@@ -21,7 +21,7 @@ jobs:
           docker run -d \
             --name color-sync-container \
             --restart always \
-            -p 8080:3000 \
+            -p 8081:3000 \
             color-sync-app:latest
 
       - name: Validation
