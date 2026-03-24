@@ -87,10 +87,10 @@
                     <div class="p-3 rounded-xl bg-indigo-500/10 text-indigo-400">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
                     </div>
-                    <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">HEALTHY</span>
+                    <span id="cluster-health" class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">HEALTHY</span>
                 </div>
-                <h3 class="text-slate-400 text-sm font-medium">Docker Nodes</h3>
-                <p class="text-3xl font-bold mt-1">10<span class="text-sm text-slate-500 ml-1">Running</span></p>
+                <h3 class="text-slate-400 text-sm font-medium">AKS Pods</h3>
+                <p class="text-3xl font-bold mt-1" id="pod-count">--<span class="text-sm text-slate-500 ml-1">Active</span></p>
             </div>
 
             <div class="glass p-6 rounded-3xl group hover:border-purple-500/30 transition-all duration-500">
@@ -99,8 +99,8 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     </div>
                 </div>
-                <h3 class="text-slate-400 text-sm font-medium">Uptime</h3>
-                <p class="text-3xl font-bold mt-1">99.98<span class="text-sm text-slate-500 ml-1">%</span></p>
+                <h3 class="text-slate-400 text-sm font-medium">Replicas</h3>
+                <p class="text-3xl font-bold mt-1" id="replica-status">--<span class="text-sm text-slate-500 ml-1">Desired</span></p>
             </div>
 
             <div class="glass p-6 rounded-3xl group hover:border-rose-500/30 transition-all duration-500">
@@ -140,21 +140,21 @@
                 <div class="space-y-8">
                     <div>
                         <div class="flex justify-between items-end mb-2">
-                            <span class="text-sm font-semibold text-slate-400">Neural Sync Engine</span>
-                            <span class="text-lg font-bold text-indigo-400">84%</span>
+                            <span class="text-sm font-semibold text-slate-400">Pod Health Sync</span>
+                            <span class="text-lg font-bold text-indigo-400" id="pod-health-percent">--%</span>
                         </div>
                         <div class="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden p-[2px] border border-slate-700">
-                            <div class="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" style="width: 84%"></div>
+                            <div id="pod-health-bar" class="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
                         </div>
                     </div>
                     
                     <div>
                         <div class="flex justify-between items-end mb-2">
-                            <span class="text-sm font-semibold text-slate-400">Distributed Storage</span>
-                            <span class="text-lg font-bold text-purple-400">62%</span>
+                            <span class="text-sm font-semibold text-slate-400">Ready Replicas</span>
+                            <span class="text-lg font-bold text-purple-400" id="ready-replicas-percent">--%</span>
                         </div>
                         <div class="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden p-[2px] border border-slate-700">
-                            <div class="h-full bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]" style="width: 62%"></div>
+                            <div id="ready-replicas-bar" class="h-full bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]" style="width: 0%"></div>
                         </div>
                     </div>
 
@@ -233,23 +233,83 @@
     </div>
 
     <script>
-        // Subtle terminal typing simulation
         const term = document.getElementById('terminal');
-        const lines = [
-            "[metrics] Memory pressure stabilized at 450mb",
-            "[auth] Syncing security tokens with cluster...",
-            "[info] Checking for image updates...",
-            "[system] All processes nominal."
-        ];
-        
-        setInterval(() => {
+        const podCount = document.getElementById('pod-count');
+        const replicaStatus = document.getElementById('replica-status');
+        const clusterHealth = document.getElementById('cluster-health');
+        const podHealthPercent = document.getElementById('pod-health-percent');
+        const podHealthBar = document.getElementById('pod-health-bar');
+        const readyReplicasPercent = document.getElementById('ready-replicas-percent');
+        const readyReplicasBar = document.getElementById('ready-replicas-bar');
+
+        function addLog(message, type = 'info') {
             const line = document.createElement('p');
-            line.className = 'text-slate-400';
-            line.innerText = lines[Math.floor(Math.random() * lines.length)];
+            const colors = {
+                info: 'text-indigo-400',
+                system: 'text-slate-500',
+                warn: 'text-amber-400',
+                error: 'text-rose-400',
+                success: 'text-emerald-400'
+            };
+            line.className = colors[type] || 'text-slate-200';
+            line.innerText = `[${new Date().toLocaleTimeString()}] [${type}] ${message}`;
             term.appendChild(line);
             if (term.childNodes.length > 20) term.removeChild(term.firstChild);
             term.scrollTop = term.scrollHeight;
-        }, 3000);
+        }
+
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/api/cluster-status');
+                const data = await response.json();
+
+                if (data.error) {
+                    addLog(`Cluster error: ${data.details}`, 'error');
+                    return;
+                }
+
+                // Update Overview
+                podCount.innerHTML = `${data.pods.length}<span class="text-sm text-slate-500 ml-1">Active</span>`;
+                replicaStatus.innerHTML = `${data.replicas.current}<span class="text-sm text-slate-500 ml-1">/ ${data.replicas.desired} Desired</span>`;
+                
+                // Update Health Indicator
+                const isHealthy = data.replicas.ready === data.replicas.desired;
+                clusterHealth.innerText = isHealthy ? 'HEALTHY' : 'SYNCING';
+                clusterHealth.className = `text-xs font-mono px-2 py-1 rounded ${isHealthy ? 'text-emerald-400 bg-emerald-400/10' : 'text-amber-400 bg-amber-400/10'}`;
+
+                // Update Progress Bars
+                const podHealthVal = (data.pods.filter(p => p.status === 'Running').length / (data.pods.length || 1)) * 100;
+                podHealthPercent.innerText = `${Math.round(podHealthVal)}%`;
+                podHealthBar.style.width = `${podHealthVal}%`;
+
+                const readyVal = (data.replicas.ready / (data.replicas.desired || 1)) * 100;
+                readyReplicasPercent.innerText = `${Math.round(readyVal)}%`;
+                readyReplicasBar.style.width = `${readyVal}%`;
+
+                // Log details if changed
+                if (data.replicas.current !== data.replicas.ready) {
+                    addLog(`Scaling in progress: ${data.replicas.ready} / ${data.replicas.desired} replicas ready`, 'warn');
+                }
+
+            } catch (err) {
+                addLog('Backend communication error', 'error');
+            }
+        }
+
+        // Initial fetch and interval
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+
+        // Simulation for other terminal lines
+        setInterval(() => {
+            const randomLogs = [
+                "Memory pressure stabilized at 450mb",
+                "Syncing security tokens with cluster...",
+                "Checking for image updates...",
+                "All processes nominal."
+            ];
+            addLog(randomLogs[Math.floor(Math.random() * randomLogs.length)], 'info');
+        }, 8000);
     </script>
 </body>
 </html>

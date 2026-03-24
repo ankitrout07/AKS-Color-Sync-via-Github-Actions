@@ -13,18 +13,24 @@ jobs:
       - name: Build Docker Image
         run: docker build --no-cache -t color-sync-app:latest .
 
-      - name: Production Deployment
+      - name: Production Deployment (AKS)
         run: |
-          # Kill old instance
-          docker rm -f color-sync-container || true
-          # Run new instance
-          docker run -d \
-            --name color-sync-container \
-            --restart always \
-            -p 8081:3000 \
-            color-sync-app:latest
+          # Get ACR server from terraform outputs if possible, or use the one from deployment.yaml
+          ACR_SERVER="acrcolorsync6539f713.azurecr.io"
+          
+          # Tag and Push to ACR
+          docker tag color-sync-app:latest $ACR_SERVER/color-sync:latest
+          # Assuming az acr login is handled or credentials exist
+          docker push $ACR_SERVER/color-sync:latest
 
-      - name: Validation
+          # Deploy to AKS
+          # Assuming kubeconfig is already set up on the self-hosted runner
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: Wait for Deployment
         run: |
-          sleep 3
-          docker ps -f name=color-sync-container
+          kubectl rollout status deployment/color-sync -n color-sync --timeout=60s
+          kubectl get pods -n color-sync
