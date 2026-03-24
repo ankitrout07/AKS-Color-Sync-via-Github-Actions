@@ -37,10 +37,16 @@ jobs:
           echo "Updating k8s/deployment.yaml with image: $ACR_SERVER/color-sync:latest"
           sed -i "s|image: .*/color-sync:latest|image: $ACR_SERVER/color-sync:latest|g" k8s/deployment.yaml
           
+          # Extract ACR name from the login server URL for 'az acr login'
+          ACR_NAME=$(echo "$ACR_SERVER" | cut -d'.' -f1)
+          
+          echo "Logging into ACR: $ACR_NAME"
+          az acr login --name "$ACR_NAME"
+
           # Tag and Push to ACR
-          docker tag color-sync-app:latest $ACR_SERVER/color-sync:latest
-          # Assuming az acr login is handled or credentials exist
-          docker push $ACR_SERVER/color-sync:latest
+          echo "Pushing image: $ACR_SERVER/color-sync:latest"
+          docker tag color-sync-app:latest "$ACR_SERVER/color-sync:latest"
+          docker push "$ACR_SERVER/color-sync:latest"
 
           # Deploy to AKS
           # Assuming kubeconfig is already set up on the self-hosted runner

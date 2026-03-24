@@ -1,10 +1,10 @@
-# 🎨 Color-Sync: Project Deep Dive
+# Color-Sync: Project Deep Dive
 
 This document provides a **meticulous** breakdown of the **Color-Sync** project, detailing every component from infrastructure to application logic and CI/CD automation.
 
 ---
 
-## 🚀 1. Architecture Overview
+## 1. Architecture Overview
 **Color-Sync** is a high-uptime, automated deployment pipeline that bridges the gap between local development and cloud-native infrastructure in **Azure Kubernetes Service (AKS)**.
 
 **The Workflow:**
@@ -18,7 +18,7 @@ This document provides a **meticulous** breakdown of the **Color-Sync** project,
 
 ## 🛠 2. The Application Layer
 
-### 🟢 Backend: Live Observability (`app.js`)
+### Backend: Live Observability (`app.js`)
 The backend is a **Node.js (Express)** application designed for cluster-aware monitoring.
 
 *   **Kubernetes Client Integration**: Uses `@kubernetes/client-node` to authenticate and interact with the cluster.
@@ -29,7 +29,7 @@ The backend is a **Node.js (Express)** application designed for cluster-aware mo
     *   `/api/cluster-status`: The heart of the app. It returns a JSON object containing pod names, phases, restart counts, and deployment replica stats.
     *   `/health`: A standard endpoint for Kubernetes **Readiness Probes** to ensure traffic only flows to healthy containers.
 
-### 🔵 Frontend: Premium Dashboard (`index.html`)
+### Frontend: Premium Dashboard (`index.html`)
 A modern, single-page dashboard built for visual clarity and real-time updates.
 
 *   **Design System**: Styled with **TailwindCSS** using a "Glassmorphism" aesthetic (blurred backgrounds, subtle borders, and glowing accents).
@@ -41,7 +41,7 @@ A modern, single-page dashboard built for visual clarity and real-time updates.
 
 ---
 
-## 🏗 3. Infrastructure as Code (`terraform/`)
+## 3. Infrastructure as Code (`terraform/`)
 We use **Terraform** to provision a reproducible and secure Azure environment.
 
 *   **Resource Group**: A logical container for all project resources (`azurerm_resource_group`).
@@ -53,7 +53,7 @@ We use **Terraform** to provision a reproducible and secure Azure environment.
 
 ---
 
-## 📦 4. Kubernetes Orchestration (`k8s/`)
+## 4. Kubernetes Orchestration (`k8s/`)
 The `k8s/` manifests define the desired state of the application.
 
 *   **Namespace (`namespace.yaml`)**: Isolates project resources in a dedicated `color-sync` namespace.
@@ -77,5 +77,5 @@ The engine of the project, executing the following on every push:
 
 ---
 
-## 📊 Summary
+## Summary
 **Color-Sync** represents a "Push-to-Live" maturity model where infrastructure, code, and monitoring are seamlessly integrated. It showcases how a small application can be scaled and monitored like a professional enterprise system.
