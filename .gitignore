@@ -35,15 +35,9 @@ node_modules/
 
 # Mac OS
 .DS_Store
+
 # Terraform
 .terraform/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
-
-# Node
-node_modules/
-npm-debug.log
-
-# OS
-.DS_Store
