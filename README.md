@@ -15,28 +15,28 @@
 | Component | Technology |
 | :--- | :--- |
 | **Runtime** | Node.js 20.x (Express.js) |
+| **K8s Client** | @kubernetes/client-node |
 | **Containerization** | Docker |
 | **Orchestration** | GitHub Actions (Custom Self-Hosted Runner) |
 | **Cloud Kubernetes** | Azure Kubernetes Service (AKS) |
 | **Container Registry** | Azure Container Registry (ACR) |
 | **IaC** | Terraform (azurerm ~3.90) |
 | **Infrastructure** | Ubuntu 24.04 LTS |
-| **Frontend** | TailwindCSS + Glassmorphism UI |
+| **Frontend** | TailwindCSS + Live AKS Monitoring |
 
 ---
 
 ## 🏗 Architecture & Logic
 
-This project implements a **Push-to-Deploy** strategy:
+This project implements a **Push-to-Deploy** strategy with **Live Observability**:
 
 1. **Source Control:** Developer pushes changes to the `main` branch.
-2. **Job Assignment:** GitHub Actions detects the push and assigns the job to the **Self-Hosted Runner** on the local node.
-3. **Docker Orchestration:**
-   - The runner pulls the latest source code.
-   - Existing containers are forcefully removed (`docker rm -f`) to prevent port conflicts.
-   - A fresh image is built **without cache** (`docker build --no-cache`) to ensure all file changes (including HTML) are picked up.
-   - The container is deployed with a `host:8081 → container:3000` port mapping.
-4. **Health Check:** The pipeline performs a post-deployment validation to ensure the service status is `Up`.
+2. **Job Assignment:** GitHub Actions detects the push and assigns the job to the **Self-Hosted Runner**.
+3. **Container & K8s Orchestration:**
+   - The runner builds the image and pushes it to **Azure Container Registry (ACR)**.
+   - It then triggers a `kubectl apply` to update the **AKS Cluster**.
+4. **Live Dashboard:** The frontend automatically polls the backend, which queries the **Kubernetes API** to show real-time pod replication and health status.
+5. **Health Check:** The pipeline performs a post-deployment validation using `kubectl rollout status`.
 
 ---
 
@@ -69,13 +69,12 @@ Color-Sync-Github-Actions/
 
 ## ⚡ Key DevOps Features
 
-* **Self-Hosted Infrastructure:** Optimized for cost-efficiency by leveraging local compute resources.
-* **No-Cache Builds:** `docker build --no-cache` ensures static file changes (HTML, CSS) are always reflected.
+* **Live AKS Pod Monitoring:** Real-time dashboard powered by `@kubernetes/client-node` to show actual pod health and replication status (desired vs. ready).
+* **Automated AKS Deployment:** GitHub Actions pipeline that builds, pushes to ACR, and deploys to AKS in one flow.
 * **AKS Ready:** Full Kubernetes manifests with namespace isolation and Horizontal Pod Autoscaling (2–5 replicas).
 * **Infrastructure as Code:** Terraform provisions the full Azure stack (Resource Group, ACR, AKS) in one command.
 * **Health Endpoint:** `/health` endpoint built into the app for readiness probes.
-* **Automated Lifecycle:** Scripted cleanup of legacy containers on each deploy.
-* **CI/CD Maturity:** Achieved **Zero-Manual-Intervention** deployment from Git Push to Live URL.
+* **CI/CD Maturity:** Achieved **Zero-Manual-Intervention** deployment from Git Push to Live AKS URL.
 
 ---
 

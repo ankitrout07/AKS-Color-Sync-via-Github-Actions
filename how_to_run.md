@@ -32,20 +32,33 @@ After `apply` completes, Terraform will print the outputs:
 | `aks_kube_config_command` | Run this to connect kubectl to your cluster |
 
 ```bash
-# 6. Connect kubectl (use the exact command from terraform output)
-az aks get-credentials --resource-group AK8S-REBUILD-TF --name aks-colorsync-tf
+# 6. Configure the Application for your Infrastructure
+Before pushing, you need to update a few files with your new ACR name:
+1. Run `terraform output acr_login_server`
+2. Update `ACR_SERVER` in `.github/workflows/deploy.yml`
+3. Update `image` in `k8s/deployment.yaml`
 
-# 7. Push the Docker image to ACR
-cd ..
-az acr build --registry <acr_login_server from output> --image color-sync:latest .
+# 7. Connect kubectl (use the exact command from terraform output)
+az aks get-credentials --resource-group YOUR_RG --name YOUR_AKS
 
-# 8. Deploy to Kubernetes
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/
+# 8. Initial Push and Deploy
+- Commit and push your changes to `main` — **Github Actions will now handle the build and deploy to AKS automatically!**
+- Alternatively, for a manual push:
+  `az acr build --registry <acr_login_server from output> --image color-sync:latest .`
+  `kubectl apply -f k8s/`
 
-# 9. Get the public endpoint
-bash scripts/endpoints.sh
-```
+# 9. Access the Live Dashboard
+The dashboard is now "Live" and connected to your AKS cluster!
+- Get the public endpoint: `bash scripts/endpoints.sh`
+- Visit the URL in your browser.
+- The dashboard will show real-time pod status and replication counts fetched directly from the Kubernetes API.
+
+### ⚡ Automated Deployment (CI/CD)
+Once the infrastructure is provisioned, you no longer need to run manual `kubectl` commands. Every **Git Push** to `main` will:
+1. Build the Docker image.
+2. Push it to your ACR.
+3. Automatically update the AKS deployment and service.
+4. Verify the rollout status.
 
 ### Shutdown
 ```bash

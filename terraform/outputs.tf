@@ -17,3 +17,13 @@ output "aks_kube_config_command" {
   description = "Run this command to configure kubectl to connect to AKS"
   value       = "az aks get-credentials --resource-group ${azurerm_resource_group.rg.name} --name ${azurerm_kubernetes_cluster.aks.name}"
 }
+
+output "deployment_info" {
+  description = "Steps to follow after terraform apply"
+  value       = <<EOT
+1. Update ACR_SERVER in .github/workflows/deploy.yml with: ${azurerm_container_registry.acr.login_server}
+2. Run: az aks get-credentials --resource-group ${azurerm_resource_group.rg.name} --name ${azurerm_kubernetes_cluster.aks.name}
+3. Run: kubectl apply -f k8s/namespace.yaml
+4. Run: kubectl apply -f k8s/
+EOT
+}
