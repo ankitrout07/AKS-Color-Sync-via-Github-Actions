@@ -2,60 +2,254 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Color-Sync CI/CD Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color-Sync Dashboard | CI/CD Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .glass { background: rgba(59, 102, 9, 0.8); backdrop-filter: blur(12px); border: 1px solid rgb(23, 194, 206); }
-        .accent-glow { box-shadow: 0 0 20px rgba(233, 229, 2, 0.959); }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top left, #0f172a, #020617);
+            overflow-x: hidden;
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .accent-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        }
+        .glow {
+            box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.3);
+        }
+        .terminal-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .scanline {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.05), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center p-6">
-    <div class="glass max-w-2xl w-full rounded-3xl p-8 accent-glow border-t-4 border-indigo-500">
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                    Color-Sync Dashboard
-                </h1>
-                <p class="text-slate-400 text-sm mt-1">Real-time CI/CD Pipeline Status</p>
-            </div>
-            <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono border border-emerald-500/20">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                LIVE ON NTZ-LINUX-003
-            </span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p class="text-slate-500 text-xs uppercase font-bold tracking-wider">Primary Theme</p>
-                <div class="flex items-center gap-3 mt-2">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                    <span class="font-mono text-indigo-300">#6366f1</span>
+<body class="text-slate-200 min-h-screen p-4 md:p-8">
+    <div class="scanline"></div>
+    
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto space-y-8 relative z-10">
+        
+        <!-- Navigation / Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center glass p-6 rounded-3xl glow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl accent-gradient flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Color-<span class="text-indigo-400">Sync</span></h1>
+                    <p class="text-xs text-slate-500 font-mono tracking-widest uppercase">CI/CD Engine v2.1.0</p>
                 </div>
             </div>
-            <div class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                <p class="text-slate-500 text-xs uppercase font-bold tracking-wider">Build Version</p>
-                <p class="text-xl font-mono text-cyan-400 mt-1">v2.1.0-stable</p>
+            
+            <div class="mt-4 md:mt-0 flex items-center gap-6">
+                <div class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                    <div class="status-dot bg-emerald-500 animate-pulse"></div>
+                    <span class="text-xs font-semibold text-emerald-400">NTZ-LINUX-003 : ACTIVE</span>
+                </div>
+                <div class="bg-slate-800 h-8 w-[1px]"></div>
+                <div class="text-right">
+                    <p class="text-xs text-slate-500">Last Deploy</p>
+                    <p class="text-sm font-semibold">2m 14s ago</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="glass p-6 rounded-3xl group hover:border-indigo-500/30 transition-all duration-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 rounded-xl bg-indigo-500/10 text-indigo-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                    </div>
+                    <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">HEALTHY</span>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium">Docker Nodes</h3>
+                <p class="text-3xl font-bold mt-1">10<span class="text-sm text-slate-500 ml-1">Running</span></p>
+            </div>
+
+            <div class="glass p-6 rounded-3xl group hover:border-purple-500/30 transition-all duration-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 rounded-xl bg-purple-500/10 text-purple-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium">Uptime</h3>
+                <p class="text-3xl font-bold mt-1">99.98<span class="text-sm text-slate-500 ml-1">%</span></p>
+            </div>
+
+            <div class="glass p-6 rounded-3xl group hover:border-rose-500/30 transition-all duration-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 rounded-xl bg-rose-500/10 text-rose-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium">Avg Build Speed</h3>
+                <p class="text-3xl font-bold mt-1">42<span class="text-sm text-slate-500 ml-1">sec</span></p>
+            </div>
+
+            <div class="glass p-6 rounded-3xl group hover:border-cyan-500/30 transition-all duration-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                    </div>
+                </div>
+                <h3 class="text-slate-400 text-sm font-medium">Data Sync</h3>
+                <p class="text-3xl font-bold mt-1">1.2<span class="text-sm text-slate-500 ml-1">GB/s</span></p>
             </div>
         </div>
 
-        <div class="space-y-4">
-            <div class="flex justify-between text-sm">
-                <span class="text-slate-400 italic font-serif">"Commit01"</span>
-                <span class="text-indigo-400 font-bold hover:underline cursor-pointer">View Actions Logs →</span>
+        <!-- Middle Section: Visualizer & Logs -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- System Visualizer -->
+            <div class="lg:col-span-2 glass rounded-3xl p-8 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <svg class="w-64 h-64 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                </div>
+                
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="w-1 h-6 bg-indigo-500 rounded-full"></span>
+                    Resource Utilization
+                </h2>
+                
+                <div class="space-y-8">
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-sm font-semibold text-slate-400">Neural Sync Engine</span>
+                            <span class="text-lg font-bold text-indigo-400">84%</span>
+                        </div>
+                        <div class="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden p-[2px] border border-slate-700">
+                            <div class="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" style="width: 84%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-sm font-semibold text-slate-400">Distributed Storage</span>
+                            <span class="text-lg font-bold text-purple-400">62%</span>
+                        </div>
+                        <div class="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden p-[2px] border border-slate-700">
+                            <div class="h-full bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]" style="width: 62%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 grid grid-cols-3 gap-4">
+                        <div class="text-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">IOPS</p>
+                            <p class="text-xl font-bold text-slate-200">12.4k</p>
+                        </div>
+                        <div class="text-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">THROUGHPUT</p>
+                            <p class="text-xl font-bold text-slate-200">850mb</p>
+                        </div>
+                        <div class="text-center p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+                            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">LATENCY</p>
+                            <p class="text-xl font-bold text-slate-200">4ms</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full bg-indigo-500 w-full shadow-[0_0_15px_rgba(99,102,241,0.6)]"></div>
+
+            <!-- Deployment Logs -->
+            <div class="glass rounded-3xl flex flex-col overflow-hidden border border-slate-800 h-[400px]">
+                <div class="p-4 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center">
+                    <div class="flex gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-rose-500/50"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-500/50"></div>
+                        <div class="w-3 h-3 rounded-full bg-emerald-500/50"></div>
+                    </div>
+                    <span class="text-[10px] font-mono text-slate-500 uppercase">Live Pipeline Stream</span>
+                </div>
+                <div id="terminal" class="p-6 font-mono text-xs space-y-2 overflow-y-auto flex-1 terminal-scroll bg-slate-950/30">
+                    <p class="text-indigo-400">[info] Initializing CI/CD environment...</p>
+                    <p class="text-slate-500">[system] Connected to NTZ-LINUX-003 self-hosted runner</p>
+                    <p class="text-slate-200">[git] Pulling latest changes from branch 'main'</p>
+                    <p class="text-slate-500">[docker] Building image color-sync-app:latest</p>
+                    <p class="text-amber-400">[warn] Using cached layers for node_modules</p>
+                    <p class="text-emerald-400">[success] Image built successfully: 124.5MB</p>
+                    <p class="text-slate-200">[docker] Restarting color-sync-container...</p>
+                    <p class="text-indigo-400">[info] Deployment target: http://localhost:8081</p>
+                    <p class="text-emerald-500 font-bold mt-2">✨ DEPLOYMENT SUCCESSFUL</p>
+                </div>
             </div>
         </div>
 
-        <footer class="mt-8 pt-6 border-t border-slate-800 text-center">
-            <p class="text-xs text-slate-500">
-                Infrastructure: <span class="text-slate-300">Ubuntu LTS</span> | 
-                Engine: <span class="text-slate-300">Docker</span> | 
-                Orchestration: <span class="text-slate-300">GitHub Actions</span>
-            </p>
+        <!-- Timeline / Footer Stats -->
+        <footer class="glass p-8 rounded-3xl text-center md:text-left">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Infrastructure</p>
+                        <p class="text-sm font-semibold flex items-center gap-2">
+                            <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+                            Ubuntu 24.04 LTS
+                        </p>
+                    </div>
+                    <div class="hidden md:block w-[1px] h-10 bg-slate-800"></div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Orchestrator</p>
+                        <p class="text-sm font-semibold flex items-center gap-2">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.89 1.52 2.34 1.08 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33c.85 0 1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>
+                            GitHub Actions
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button class="px-6 py-3 rounded-2xl bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 hover:bg-indigo-600 transition-colors">
+                        Re-deploy System
+                    </button>
+                    <button class="px-6 py-3 rounded-2xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition-colors">
+                        Export Logs
+                    </button>
+                </div>
+            </div>
         </footer>
     </div>
+
+    <script>
+        // Subtle terminal typing simulation
+        const term = document.getElementById('terminal');
+        const lines = [
+            "[metrics] Memory pressure stabilized at 450mb",
+            "[auth] Syncing security tokens with cluster...",
+            "[info] Checking for image updates...",
+            "[system] All processes nominal."
+        ];
+        
+        setInterval(() => {
+            const line = document.createElement('p');
+            line.className = 'text-slate-400';
+            line.innerText = lines[Math.floor(Math.random() * lines.length)];
+            term.appendChild(line);
+            if (term.childNodes.length > 20) term.removeChild(term.firstChild);
+            term.scrollTop = term.scrollHeight;
+        }, 3000);
+    </script>
 </body>
 </html>
