@@ -1,18 +1,23 @@
 #!/bin/bash
-echo "Waiting for LoadBalancer IPs..."
+
+# 1. Fetch Cluster Context
+CLUSTER_NAME="aks-colorsync"
+RG_NAME="AK8S-REBUILD"
+KUBE_API=$(kubectl cluster-info | grep 'Kubernetes control plane' | awk '{print $NF}')
+
+echo "Waiting for Color-Sync LoadBalancer IP..."
 while [ -z "$COLOR_IP" ]; do
   COLOR_IP=$(kubectl get svc color-sync-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
-  [ -z "$COLOR_IP" ] && sleep 5
+  if [ -z "$COLOR_IP" ]; then
+    echo -n "."
+    sleep 5
+  fi
 done
 
-while [ -z "$GRAFANA_IP" ]; do
-  GRAFANA_IP=$(kubectl get svc monitoring-stack-grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
-  [ -z "$GRAFANA_IP" ] && sleep 5
-done
-
+echo -e "\n------------------------------------------------"
+echo "PRODUCTION ENDPOINTS: $CLUSTER_NAME"
 echo "------------------------------------------------"
-echo "PRODUCTION ENDPOINTS"
-echo "------------------------------------------------"
-echo "Color-Sync App: http://$COLOR_IP"
-echo "Grafana Dash:   http://$GRAFANA_IP"
+echo "Primary Application:  http://$COLOR_IP"
+echo "Kubernetes API:       $KUBE_API"
+echo "Azure Console:        https://portal.azure.com/#@/resource/subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RG_NAME/providers/Microsoft.ContainerService/managedClusters/$CLUSTER_NAME/overview"
 echo "------------------------------------------------"
