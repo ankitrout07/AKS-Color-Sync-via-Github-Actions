@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: color-sync-service
+  namespace: color-sync
 spec:
   type: LoadBalancer
   selector:

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: color-sync
+  namespace: color-sync
   labels:
     app: color-sync
 spec:
