@@ -33,6 +33,10 @@ jobs:
             exit 1
           fi
           
+          # Auto-update the manifest with the correct ACR server
+          echo "Updating k8s/deployment.yaml with image: $ACR_SERVER/color-sync:latest"
+          sed -i "s|image: .*/color-sync:latest|image: $ACR_SERVER/color-sync:latest|g" k8s/deployment.yaml
+          
           # Tag and Push to ACR
           docker tag color-sync-app:latest $ACR_SERVER/color-sync:latest
           # Assuming az acr login is handled or credentials exist
