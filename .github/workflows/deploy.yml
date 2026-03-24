@@ -15,8 +15,20 @@ jobs:
 
       - name: Production Deployment (AKS)
         run: |
-          # Get ACR server from terraform outputs if possible, or use the one from deployment.yaml
-          ACR_SERVER="acrcolorsync6539f713.azurecr.io"
+          # Try to get ACR server from terraform outputs, or fallback to k8s/deployment.yaml
+          ACR_SERVER=$(terraform -chdir=terraform output -raw acr_login_server 2>/dev/null || echo "")
+          
+          if [ -z "$ACR_SERVER" ]; then
+            echo "Terraform output not found or terraform not initialized. Falling back to k8s/deployment.yaml..."
+            ACR_SERVER=$(grep -oP 'image: \K[^/]+' k8s/deployment.yaml | head -n 1)
+          fi
+          
+          if [ -z "$ACR_SERVER" ]; then
+            echo "Error: Could not determine ACR_SERVER from terraform or deployment.yaml"
+            exit 1
+          fi
+          
+          echo "Using ACR_SERVER: $ACR_SERVER"
           
           # Tag and Push to ACR
           docker tag color-sync-app:latest $ACR_SERVER/color-sync:latest
