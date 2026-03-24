@@ -17,9 +17,7 @@ spec:
     spec:
       containers:
       - name: color-sync
-        # IMPORTANT: Replace the ACR login server (e.g., acrcolorsync.azurecr.io) 
-        # with the value from `terraform output acr_login_server`
-        image: acrcolorsyncPLACEHOLDER.azurecr.io/color-sync:latest
+        image: acrcolorsync6539f713.azurecr.io/color-sync:latest
         ports:
         - containerPort: 3000
         readinessProbe:
