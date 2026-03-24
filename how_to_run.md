@@ -1,63 +1,102 @@
-# How to Run Color-Sync
+# Color-Sync — How to Run
 
-This guide provides simple steps to run the **Color-Sync-Github-Actions** project on your local machine.
-
-There are two primary ways to run this project:
-1. Using Node.js directly
-2. Using Docker
+This guide covers how to **start**, **deploy to AKS**, and **shut down** the Color-Sync project.
 
 ---
 
-## Method 1: Running with Node.js directly
+## Method 1: Running Locally with Node.js
 
-Prerequisites: You must have **Node.js** and **npm** installed on your system.
+**Prerequisites:** Node.js and npm installed.
 
-### Steps:
-1. **Open your terminal** and navigate to the project directory:
-   ```bash
-   cd /path/to/Color-Sync-Github-Actions
-   ```
+```bash
+# 1. Install dependencies
+npm install
 
-2. **Install the dependencies**:
-   ```bash
-   npm install
-   ```
+# 2. Start the app
+node app.js
+```
 
-3. **Start the application**:
-   ```bash
-   node app.js
-   ```
+Visit: [http://localhost:3000](http://localhost:3000)
 
-4. **Access the web app**:
-   Open your web browser and navigate to:
-   [http://localhost:3000](http://localhost:3000)
+### Shutdown
+```bash
+# Press Ctrl+C in the terminal running the app
+```
 
 ---
 
 ## Method 2: Running with Docker
 
-Prerequisites: You must have **Docker** installed and running on your system.
+**Prerequisites:** Docker installed and running.
 
-### Steps:
-1. **Open your terminal** and navigate to the project directory:
-   ```bash
-   cd /path/to/Color-Sync-Github-Actions
-   ```
+```bash
+# 1. Build the Docker image
+docker build -t color-sync .
 
-2. **Build the Docker Image**:
-   This packages the application into a Docker container.
-   ```bash
-   docker build -t color-sync .
-   ```
+# 2. Run the container
+docker run -d -p 3000:3000 --name color-sync-app color-sync
+```
 
-3. **Run the Docker Container**:
-   This command starts the container and maps port `3000` (or your preferred port) on your machine to the port `3000` inside the container.
-   ```bash
-   docker run -d -p 3000:3000 --name color-sync-app color-sync
-   ```
+Visit: [http://localhost:3000](http://localhost:3000)
 
-4. **Access the web app**:
-   Open your web browser and navigate to:
-   [http://localhost:3000](http://localhost:3000)
+### Shutdown
+```bash
+# Stop and remove the container
+docker stop color-sync-app
+docker rm color-sync-app
+```
 
-*(Note: If you want to stop the Docker container later, run `docker stop color-sync-app`)*
+---
+
+## Method 3: Deploying to AKS (Azure Kubernetes Service)
+
+**Prerequisites:** [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) and [kubectl](https://kubernetes.io/docs/tasks/tools/) installed.
+
+```bash
+# Set variables
+RESOURCE_GROUP="AK8S-REBUILD"
+CLUSTER_NAME="aks-colorsync"
+ACR_NAME="acrcolorsyncankit2026"
+LOCATION="eastus"
+```
+
+```bash
+# 1. Create resource group
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# 2. Create Azure Container Registry and push image
+az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic
+az acr build --registry $ACR_NAME --image color-sync:latest .
+
+# 3. Create AKS cluster linked to ACR
+az aks create \
+  --resource-group $RESOURCE_GROUP \
+  --name $CLUSTER_NAME \
+  --node-count 2 \
+  --generate-ssh-keys \
+  --attach-acr $ACR_NAME
+
+# 4. Connect kubectl to the cluster
+az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME
+
+# 5. Deploy to Kubernetes
+kubectl apply -f k8s/
+
+# 6. Get the public endpoint
+bash scripts/endpoints.sh
+```
+
+Visit the **Primary Application** URL printed by the script.
+
+### Shutdown
+```bash
+# Remove Kubernetes deployments
+kubectl delete -f k8s/
+
+# (Optional) Delete the entire AKS cluster and resource group
+az group delete --name $RESOURCE_GROUP --yes --no-wait
+```
+
+---
+
+> **Tip:** For CI/CD via GitHub Actions, simply push changes to the `main` branch — the self-hosted runner will automatically rebuild and redeploy the container.
