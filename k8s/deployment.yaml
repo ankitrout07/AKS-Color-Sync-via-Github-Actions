@@ -38,3 +38,11 @@ env:
     valueFrom:
       fieldRef:
         fieldPath: metadata.namespace
+containers:
+- name: color-sync
+  image: <your-image>
+  env:
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
