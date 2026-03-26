@@ -38,3 +38,16 @@ resource "azurerm_role_assignment" "aks_to_acr" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
+resource "azurerm_network_security_rule" "allow_aks_nodeport" {
+  name                        = "AllowAKSNodePortInbound"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "31309" # Or "30000-32767" for all K8s services
+  source_address_prefix       = "AzureLoadBalancer"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.your_nsg_name.name
+}
