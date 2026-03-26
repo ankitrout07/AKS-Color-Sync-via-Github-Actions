@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: color-sync
-        image: acrcolorsync25a7634d.azurecr.io/color-sync:latest
+        image: acrcolorsync7a455266.azurecr.io/color-sync:latest
         ports:
         - containerPort: 3000
         readinessProbe:
