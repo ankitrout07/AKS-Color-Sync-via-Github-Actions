@@ -8,6 +8,10 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      acr_login_server: ${{ steps.terraform-outputs.outputs.acr_login_server }}
+      aks_cluster_name: ${{ steps.terraform-outputs.outputs.aks_cluster_name }}
+      resource_group: ${{ steps.terraform-outputs.outputs.resource_group_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,9 +27,18 @@ jobs:
           terraform init
 
       - name: Terraform apply
+        id: terraform-apply
         run: |
           cd terraform
           terraform apply -auto-approve
+
+      - name: Terraform outputs
+        id: terraform-outputs
+        run: |
+          cd terraform
+          echo "acr_login_server=$(terraform output -raw acr_login_server)" >> $GITHUB_OUTPUT
+          echo "aks_cluster_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
 
   deploy:
     needs: terraform
@@ -39,13 +52,28 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Configure AKS credentials
+      - name: Get AKS credentials
         run: |
-          az aks get-credentials --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_AKS_CLUSTER_NAME }} --overwrite-existing
+          az aks get-credentials --resource-group ${{ needs.terraform.outputs.resource_group }} --name ${{ needs.terraform.outputs.aks_cluster_name }} --overwrite-existing
 
-      - name: Apply Kubernetes manifests
+      - name: Set deployment image tag
+        run: |
+          ACR_SERVER=${{ needs.terraform.outputs.acr_login_server }}
+          IMAGE="$ACR_SERVER/color-sync:${GITHUB_SHA::7}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Build and push container image
+        run: |
+          docker build -t "$IMAGE" .
+          echo "$IMAGE"
+          az acr login --name "${{ needs.terraform.outputs.acr_login_server%%.* }}"
+          docker push "$IMAGE"
+
+      - name: Deploy to AKS
         run: |
           kubectl apply -f k8s/namespace.yaml
+          kubectl set image deployment/color-sync color-sync="$IMAGE" -n color-sync --record || true
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
+
