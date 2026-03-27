@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: color-sync
-        image: acrcolorsync7a455266.azurecr.io/color-sync:latest
+        image: "REPLACE_WITH_ACR_IMAGE"
         ports:
         - containerPort: 3000
         env:
@@ -34,7 +34,7 @@ spec:
             memory: "128Mi"
         readinessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 10

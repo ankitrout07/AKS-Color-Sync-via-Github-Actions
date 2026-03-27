@@ -1,10 +1,26 @@
+Set secrets in GitHub Actions:
+AZURE_CREDENTIALS
+AZURE_RESOURCE_GROUP
+AZURE_AKS_CLUSTER_NAME
+
+First run:
+cd terraform
+terraform init
+terraform plan
+terraform apply -auto-approve
+
+Optional manual cluster step (post infra):
+az aks get-credentials --resource-group ... --name ... --overwrite-existing
+
+Ensure deployment.yaml image is either placeholder or updated before manual apply.
+
+Pipeline sets image on push automatically.
+
+
+
 # Color-Sync — How to Run
 
-This guide covers how to **start**, **deploy to AKS**, and **shut down** the Color-Sync project.
-
 ## Method: Provision AKS Infrastructure with Terraform (Recommended)
-
-**Prerequisites:** [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli), [Terraform ≥ 1.3](https://developer.hashicorp.com/terraform/install), and [kubectl](https://kubernetes.io/docs/tasks/tools/) installed.
 
 ```bash
 # 1. Authenticate to Azure

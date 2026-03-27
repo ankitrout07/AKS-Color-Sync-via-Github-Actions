@@ -72,8 +72,9 @@ jobs:
       - name: Deploy to AKS
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl set image deployment/color-sync color-sync="$IMAGE" -n color-sync --record || true
-          kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl set image deployment/color-sync color-sync="$IMAGE" -n color-sync --record
+          kubectl rollout status deployment/color-sync -n color-sync --timeout=180s
 

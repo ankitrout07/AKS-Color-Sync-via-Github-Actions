@@ -16,7 +16,8 @@ try {
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 const appsApi = kc.makeApiClient(k8s.AppsV1Api);
 
-app.use(express.static('.'));
+// Use an explicit static folder to avoid exposing unintended files
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -24,6 +25,10 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
+});
+
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'up', timestamp: new Date().toISOString() });
 });
 
 // New API endpoint for Cluster Status
