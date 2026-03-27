@@ -1,61 +1,40 @@
-name: Deploy Color-Sync
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build Docker Image
-        run: docker build --no-cache -t color-sync-app:latest .
-
-      - name: Production Deployment (AKS)
-        run: |
-          # Try to get ACR server from terraform outputs, or fallback to k8s/deployment.yaml
-          # We use a regex to ensure the output is a valid hostname and not a terraform warning
-          TF_OUTPUT=$(terraform -chdir=terraform output -raw acr_login_server 2>/dev/null || echo "")
-          
-          if [[ "$TF_OUTPUT" =~ ^[a-zA-Z0-9.-]+\.azurecr\.io$ ]]; then
-            ACR_SERVER="$TF_OUTPUT"
-            echo "Using ACR_SERVER from Terraform: $ACR_SERVER"
-          else
-            echo "Terraform output invalid or not found. Falling back to k8s/deployment.yaml..."
-            ACR_SERVER=$(grep -oP 'image: \K[^/]+' k8s/deployment.yaml | head -n 1)
-            echo "Using ACR_SERVER from Deployment Manifest: $ACR_SERVER"
-          fi
-          
-          if [ -z "$ACR_SERVER" ]; then
-            echo "Error: Could not determine ACR_SERVER from terraform or deployment.yaml"
-            exit 1
-          fi
-          
-          # Auto-update the manifest with the correct ACR server
-          echo "Updating k8s/deployment.yaml with image: $ACR_SERVER/color-sync:latest"
-          sed -i "s|image: .*/color-sync:latest|image: $ACR_SERVER/color-sync:latest|g" k8s/deployment.yaml
-          
-          # Extract ACR name from the login server URL for 'az acr login'
-          ACR_NAME=$(echo "$ACR_SERVER" | cut -d'.' -f1)
-          
-          echo "Logging into ACR: $ACR_NAME"
-          az acr login --name "$ACR_NAME"
-
-          # Tag and Push to ACR
-          echo "Pushing image: $ACR_SERVER/color-sync:latest"
-          docker tag color-sync-app:latest "$ACR_SERVER/color-sync:latest"
-          docker push "$ACR_SERVER/color-sync:latest"
-
-          # Deploy to AKS
-          # Assuming kubeconfig is already set up on the self-hosted runner
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/hpa.yaml
-
-      - name: Wait for Deployment
-        run: |
-          kubectl rollout status deployment/color-sync -n color-sync --timeout=60s
-          kubectl get pods -n color-sync
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+  name: color-sync
+  namespace: color-sync
+  labels:
+    app: color-sync
+ spec:
+    replicas: 2
+    selector:
+    matchLabels:
+      app: color-sync
+  template:
+    metadata:
+      labels:
+        app: color-sync
+    spec:
+      containers:
+      - name: color-sync
+        image: acrcolorsync7a455266.azurecr.io/color-sync:latest
+        ports:
+        - containerPort: 3000
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10

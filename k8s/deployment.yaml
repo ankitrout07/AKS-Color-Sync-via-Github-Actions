@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: color-sync
-        image: acrcolorsync7a455266.azurecr.io/color-sync:latest
+        image: /color-sync:latest
         ports:
         - containerPort: 3000
         readinessProbe:
@@ -40,7 +40,7 @@ env:
         fieldPath: metadata.namespace
 containers:
 - name: color-sync
-  image: <your-image>
+  image: /color-sync:latest
   env:
     - name: NAMESPACE
       valueFrom:
