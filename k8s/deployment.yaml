@@ -17,32 +17,24 @@ spec:
     spec:
       containers:
       - name: color-sync
-        image: /color-sync:latest
+        image: acrcolorsync7a455266.azurecr.io/color-sync:latest
         ports:
         - containerPort: 3000
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
         readinessProbe:
           httpGet:
             path: /
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-env:
-  - name: K8S_NAMESPACE
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.namespace
-containers:
-- name: color-sync
-  image: /color-sync:latest
-  env:
-    - name: NAMESPACE
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.namespace

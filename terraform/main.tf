@@ -38,4 +38,3 @@ resource "azurerm_role_assignment" "aks_to_acr" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
-resource "azurerm_network_security_rule" "allow_aks_nodeport" {
