@@ -51,36 +51,50 @@ az aks get-credentials --resource-group YOUR_RG --name YOUR_AKS
 The dashboard is now "Live" and connected to your AKS cluster!
 - Get the public endpoint: `bash scripts/endpoints.sh`
 - Visit the URL in your browser.
-- The dashboard will show real-time pod status and replication counts fetched directly from the Kubernetes API.
+- The dashboard shows real-time pod status and replication counts fetched directly from the Kubernetes API.
 
 ### ⚡ Automated Deployment (CI/CD)
-Once the infrastructure is provisioned, you no longer need to run manual `kubectl` commands. Every **Git Push** to `main` will:
-1. Build the Docker image.
-2. Push it to your ACR.
-3. Automatically update the AKS deployment and service.
-4. Verify the rollout status.
+This repository ships a workflow in `.github/workflows/deploy.yml` that performs full CI/CD on every `main` push.
 
-### Shutdown
+What happens when you push to `main`:
+1. Checkout code.
+2. Login to Azure using `AZURE_CREDENTIALS` secret.
+3. Run Terraform (`terraform init` + `terraform apply -auto-approve`) in `terraform/`.
+4. Export ACR and AKS outputs.
+5. Login to ACR and build/push image with git short SHA tag.
+6. Connect to AKS and deploy the manifests.
+7. Update `color-sync` deployment image, apply service and HPA.
+
+### ✅ Required GitHub secrets
+- `AZURE_CREDENTIALS` (service principal JSON)
+- `AZURE_RESOURCE_GROUP`
+- `AZURE_AKS_CLUSTER_NAME`
+
+### Quick local workflow (if you want manual control)
 ```bash
-# Remove all Kubernetes resources
-kubectl delete -f k8s/
-
-# Destroy all Azure infrastructure managed by Terraform
+# Provision infra
 cd terraform
-terraform destroy
+terraform init
+terraform plan
+terraform apply -auto-approve
+
+# Connect kubectl
+az aks get-credentials --resource-group $(terraform output -raw resource_group_name) --name $(terraform output -raw aks_cluster_name) --overwrite-existing
+
+# Prepare Kubernetes resources
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/hpa.yaml
+
+# Validate
+kubectl get pods -n color-sync
+kubectl get svc -n color-sync -w
 ```
 
----
-
-kubectl create namespace color-sync
-# Apply the Deployment to the color-sync namespace
-kubectl apply -f k8s/deployment.yaml
-
-# Apply the Service to the color-sync namespace
-kubectl apply -f k8s/service.yaml
-
-# Check the pods in the specific namespace
-kubectl get pods -n color-sync
-
-# Watch for the LoadBalancer Public IP in the namespace
-kubectl get svc -n color-sync -w
+### Cleanup
+```bash
+kubectl delete -f k8s/
+cd terraform
+terraform destroy -auto-approve
+```
